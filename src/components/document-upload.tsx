@@ -244,7 +244,7 @@ export function DocumentUpload({
   }
 
   return (
-    <article className="workspace-card flex flex-col">
+    <article className="workspace-card workspace-card--documents flex flex-col">
       <header className="card-heading">
         <span className="icon-tile">
           <UploadCloud aria-hidden="true" size={18} />
@@ -252,7 +252,7 @@ export function DocumentUpload({
         <div className="min-w-0 flex-1">
           <h2 className="text-sm font-semibold text-slate-900">Add documents</h2>
           <p className="mt-0.5 text-xs text-slate-500">
-            Word, text, PDFs, and images with OCR
+            Documents, scans, and images
           </p>
         </div>
         <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
@@ -260,7 +260,7 @@ export function DocumentUpload({
         </span>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col p-4">
+      <div className="flex min-h-0 flex-1 flex-col p-4 sm:p-5">
         <input
           ref={inputRef}
           id={inputId}
@@ -274,13 +274,14 @@ export function DocumentUpload({
         />
 
         <div
-          className={`rounded-xl border border-dashed px-4 py-5 text-center transition ${
+          className={`upload-dropzone ${
             isDragging
-              ? "border-indigo-500 bg-indigo-50 ring-4 ring-indigo-100"
+              ? "upload-dropzone--dragging"
               : selectionError
-                ? "border-red-300 bg-red-50/50"
-                : "border-slate-300 bg-slate-50/70"
-          } ${remainingSlots === 0 || isUploading ? "opacity-60" : ""}`}
+                ? "upload-dropzone--error"
+                : ""
+          } ${remainingSlots === 0 || isUploading ? "upload-dropzone--disabled" : ""}`}
+          aria-busy={isUploading}
           onDragEnter={(event) => {
             event.preventDefault();
             if (!isUploading && remainingSlots > 0) setIsDragging(true);
@@ -293,27 +294,38 @@ export function DocumentUpload({
           }}
           onDrop={handleDrop}
         >
-          <FileUp aria-hidden="true" className="mx-auto text-indigo-600" size={24} />
-          <p className="mt-2 text-sm font-semibold text-slate-900">
+          <span className="upload-dropzone__scan" aria-hidden="true" />
+          <span className="upload-dropzone__icon">
+            {isUploading ? (
+              <LoaderCircle aria-hidden="true" className="animate-spin" size={22} />
+            ) : (
+              <FileUp aria-hidden="true" size={22} strokeWidth={1.9} />
+            )}
+          </span>
+          <p className="mt-3 text-sm font-semibold tracking-[-0.01em] text-slate-900">
             {isDragging ? "Drop your documents here" : "Choose or drop documents"}
           </p>
           <p
             id={`${inputId}-help`}
-            className="mx-auto mt-1 max-w-64 text-xs leading-5 text-slate-500"
+            className="mx-auto mt-1 max-w-72 text-xs leading-5 text-slate-500"
           >
-            PDF, DOCX, TXT, PNG, JPG, or WebP · {MAX_DOCUMENT_FILE_SIZE_LABEL} each.{" "}
+            PDF, DOCX, TXT, PNG, JPG, or WebP
+            <span className="mx-1.5 text-slate-300">·</span>
+            {MAX_DOCUMENT_FILE_SIZE_LABEL} each
+            <span className="mx-1.5 text-slate-300">·</span>
             {remainingSlots > 0
               ? `${remainingSlots} ${remainingSlots === 1 ? "slot" : "slots"} remaining.`
               : "Workspace full."}
           </p>
           <label
-            className={`mt-3 inline-flex min-h-9 items-center justify-center rounded-lg bg-indigo-600 px-4 text-xs font-semibold text-white shadow-sm transition ${
+            className={`upload-dropzone__button ${
               remainingSlots === 0 || isUploading
-                ? "cursor-not-allowed bg-slate-300"
-                : "cursor-pointer hover:bg-indigo-700 focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2"
+                ? "upload-dropzone__button--disabled"
+                : ""
             }`}
             htmlFor={inputId}
           >
+            <UploadCloud aria-hidden="true" size={15} />
             Choose documents
           </label>
         </div>
@@ -331,7 +343,7 @@ export function DocumentUpload({
         </p>
 
         {workspaceCount > 0 ? (
-          <div className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
+          <div className="document-list mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
             {documents.map((document) => {
               const isSelected = document.id === selectedDocumentId;
               const isDeleting = document.id === deletingDocumentId;
@@ -339,30 +351,36 @@ export function DocumentUpload({
               return (
                 <div
                   key={document.id}
-                  className={`flex items-center gap-2 rounded-xl border p-2 transition ${
+                  className={`document-row document-row--entered ${
                     isSelected
-                      ? "border-indigo-300 bg-indigo-50"
-                      : "border-slate-200 bg-white"
+                      ? "document-row--selected"
+                      : ""
+                  } ${
+                    document.status === "FAILED"
+                      ? "document-row--error"
+                      : ""
                   }`}
                 >
                   <button
-                    className="flex min-w-0 flex-1 items-center gap-3 rounded-lg p-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                    className="document-row__main"
                     type="button"
                     aria-pressed={isSelected}
+                    aria-label={
+                      isSelected
+                        ? `Viewing ${document.fileName}`
+                        : `Preview ${document.fileName}`
+                    }
                     onClick={() => onDocumentSelected(document.id)}
                   >
-                    <span
-                      className={`grid size-9 shrink-0 place-items-center rounded-lg ${
-                        document.status === "READY"
-                          ? "bg-emerald-50 text-emerald-600"
-                          : "bg-red-50 text-red-600"
-                      }`}
-                    >
-                      {document.status === "READY" ? (
-                        <CheckCircle2 aria-hidden="true" size={18} />
-                      ) : (
-                        <AlertCircle aria-hidden="true" size={18} />
-                      )}
+                    <span className="document-row__file-icon">
+                      <FileText aria-hidden="true" size={17} strokeWidth={1.9} />
+                      <span
+                        className={`document-row__status-dot ${
+                          document.status === "READY"
+                            ? "document-row__status-dot--ready"
+                            : "document-row__status-dot--error"
+                        }`}
+                      />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span
@@ -371,22 +389,39 @@ export function DocumentUpload({
                       >
                         {document.fileName}
                       </span>
-                      <span className="mt-0.5 block text-[0.68rem] text-slate-500">
-                        {uploadedFileTypeLabel(document)} ·{" "}
-                        {formatFileSize(document.fileSize)} ·{" "}
-                        {document.status === "READY" ? "Ready" : "Failed"}
+                      <span className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[0.68rem] text-slate-500">
+                        <span>{uploadedFileTypeLabel(document)}</span>
+                        <span className="text-slate-300">·</span>
+                        <span>{formatFileSize(document.fileSize)}</span>
+                        <span
+                          className={
+                            document.status === "READY"
+                              ? "document-status document-status--ready"
+                              : "document-status document-status--error"
+                          }
+                        >
+                          {document.status === "READY" ? (
+                            <CheckCircle2 aria-hidden="true" size={11} />
+                          ) : (
+                            <AlertCircle aria-hidden="true" size={11} />
+                          )}
+                          {document.status === "READY" ? "Ready" : "Failed"}
+                        </span>
                       </span>
                     </span>
-                    {isSelected ? (
+                    <span
+                      className={`document-row__preview ${
+                        isSelected ? "document-row__preview--active" : ""
+                      }`}
+                    >
                       <Search
-                        aria-label="Currently previewing"
-                        className="shrink-0 text-indigo-600"
-                        size={15}
+                        aria-label={isSelected ? "Currently previewing" : "Preview document"}
+                        size={14}
                       />
-                    ) : null}
+                    </span>
                   </button>
                   <button
-                    className="grid size-8 shrink-0 place-items-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="document-row__delete"
                     type="button"
                     aria-label={`Delete ${document.fileName}`}
                     disabled={isDeleting}
@@ -413,17 +448,19 @@ export function DocumentUpload({
               return (
                 <div
                   key={document.key}
-                  className={`flex items-center gap-3 rounded-xl border p-3 ${
+                  className={`document-row document-row--entered ${
                     isInvalid
-                      ? "border-red-200 bg-red-50/60"
-                      : "border-slate-200 bg-white"
+                      ? "document-row--error"
+                      : document.status === "uploading"
+                        ? "document-row--processing"
+                        : ""
                   }`}
                 >
                   <span
-                    className={`grid size-9 shrink-0 place-items-center rounded-lg ${
+                    className={`document-row__file-icon ${
                       isInvalid
-                        ? "bg-red-100 text-red-600"
-                        : "bg-indigo-50 text-indigo-600"
+                        ? "document-row__file-icon--error"
+                        : ""
                     }`}
                   >
                     {document.status === "uploading" ? (
@@ -435,7 +472,7 @@ export function DocumentUpload({
                     ) : isInvalid ? (
                       <AlertCircle aria-hidden="true" size={18} />
                     ) : (
-                      <FileText aria-hidden="true" size={18} />
+                      <FileText aria-hidden="true" size={17} strokeWidth={1.9} />
                     )}
                   </span>
                   <span className="min-w-0 flex-1">
@@ -455,13 +492,13 @@ export function DocumentUpload({
                           document.file.size,
                         )} · ${
                           document.status === "uploading"
-                            ? "Gemini is indexing…"
+                            ? "Processing document…"
                             : "Ready to upload"
                         }`}
                     </span>
                   </span>
                   <button
-                    className="grid size-8 shrink-0 place-items-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="document-row__delete"
                     type="button"
                     aria-label={`Remove ${document.file.name}`}
                     disabled={document.status === "uploading"}
@@ -476,15 +513,14 @@ export function DocumentUpload({
         ) : (
           <div className="flex min-h-28 flex-1 items-center justify-center text-center">
             <p className="max-w-56 text-xs leading-5 text-slate-500">
-              Selected documents will appear here with their individual Gemini
-              indexing status.
+              Your documents and processing status will appear here.
             </p>
           </div>
         )}
 
         {uploadableDocuments.length > 0 ? (
           <button
-            className="mt-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-300"
+            className="upload-primary-button mt-4"
             type="button"
             disabled={isUploading}
             onClick={() => void uploadDocuments()}
@@ -495,7 +531,7 @@ export function DocumentUpload({
               <UploadCloud aria-hidden="true" size={16} />
             )}
             {isUploading
-              ? "Gemini is indexing…"
+              ? "Processing documents…"
               : `Upload ${uploadableDocuments.length} ${
                   uploadableDocuments.length === 1 ? "document" : "documents"
                 }`}

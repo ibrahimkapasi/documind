@@ -5,11 +5,11 @@ import {
   AlignLeft,
   CheckCircle2,
   ChevronDown,
-  ChevronUp,
   FileText,
   LoaderCircle,
   RefreshCw,
   RotateCcw,
+  Sparkles,
   Trash2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -163,14 +163,21 @@ export function DocumentPreview({
 
   if (previewState.status === "loading") {
     content = (
-      <div className="flex flex-1 items-center justify-center px-6 py-10 text-center" role="status">
-        <div>
-          <LoaderCircle
-            aria-hidden="true"
-            className="mx-auto animate-spin text-indigo-500"
-            size={28}
-          />
+      <div className="preview-loading flex flex-1 items-center justify-center px-6 py-10 text-center" role="status">
+        <div className="w-full max-w-72">
+          <span className="preview-loading__document" aria-hidden="true">
+            <FileText size={22} strokeWidth={1.8} />
+            <span className="preview-loading__scan" />
+          </span>
           <p className="mt-4 text-sm font-medium text-slate-700">Loading document…</p>
+          <p className="mt-1.5 text-xs leading-5 text-slate-500">
+            Preparing the document overview
+          </p>
+          <div className="preview-loading__lines mt-5" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
         </div>
       </div>
     );
@@ -207,21 +214,21 @@ export function DocumentPreview({
     const text = document.aiSummary ?? "";
 
     content = (
-      <div className="flex min-h-0 flex-1 flex-col p-5">
-        <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+      <div className="flex min-h-0 flex-1 flex-col p-4 sm:p-5">
+        <div className="preview-document-card">
           <div className="flex min-w-0 items-start gap-3">
-            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white text-indigo-600 shadow-sm">
-              <FileText aria-hidden="true" size={20} />
+            <span className="preview-document-card__icon">
+              <FileText aria-hidden="true" size={20} strokeWidth={1.9} />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-slate-900" title={document.fileName}>
+              <p className="truncate text-sm font-semibold tracking-[-0.01em] text-slate-950" title={document.fileName}>
                 {document.fileName}
               </p>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="preview-document-card__metadata mt-1 text-xs text-slate-500">
                 {fileTypeLabel(document.mimeType)} · {formatFileSize(document.fileSize)}
               </p>
             </div>
-            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.68rem] font-semibold ${status.classes}`}>
+            <span className={`preview-status ${status.classes}`}>
               <StatusIcon
                 aria-hidden="true"
                 size={13}
@@ -232,31 +239,53 @@ export function DocumentPreview({
         </div>
 
         {document.status === "FAILED" ? (
-          <div className="mt-4 rounded-lg bg-red-50 px-3 py-3 text-xs leading-5 text-red-700" role="alert">
+          <div className="preview-error mt-4" role="alert">
             {document.errorMessage ?? "The document could not be processed."}
           </div>
         ) : document.status === "READY" && text ? (
           <>
             <button
-              className="mt-4 flex w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-left text-sm font-semibold text-slate-700 hover:border-indigo-300 hover:text-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+              className="preview-overview-toggle mt-4"
               type="button"
               aria-expanded={isExpanded}
               onClick={() => setIsExpanded((current) => !current)}
             >
-              <span>Gemini document overview</span>
-              <span className="inline-flex items-center gap-1.5 text-xs text-indigo-600">
+              <span className="flex min-w-0 items-center gap-2.5">
+                <span className="preview-overview-toggle__icon">
+                  <Sparkles aria-hidden="true" size={14} />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold text-slate-800">
+                    Document overview
+                  </span>
+                  <span className="mt-0.5 block text-[0.68rem] font-medium text-slate-500">
+                    Generated from document content
+                  </span>
+                </span>
+              </span>
+              <span className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-indigo-600">
                 {isExpanded ? "Collapse" : "Expand"}
-                {isExpanded ? (
-                  <ChevronUp aria-hidden="true" size={15} />
-                ) : (
-                  <ChevronDown aria-hidden="true" size={15} />
-                )}
+                <ChevronDown
+                  aria-hidden="true"
+                  className={`preview-overview-chevron ${
+                    isExpanded ? "preview-overview-chevron--expanded" : ""
+                  }`}
+                  size={15}
+                />
               </span>
             </button>
             {isExpanded ? (
-              <div className="mt-3 min-h-0 flex-1 overflow-auto rounded-xl border border-slate-200 bg-white p-4">
+              <div
+                className="preview-reading-surface mt-3 min-h-0 flex-1 overflow-auto"
+                aria-label="Generated document overview"
+                tabIndex={0}
+              >
+                <div className="preview-reading-surface__label">
+                  <Sparkles aria-hidden="true" size={12} />
+                  Generated from document content
+                </div>
                 <pre
-                  className="whitespace-pre-wrap break-words text-start font-sans text-xs leading-6 text-slate-700"
+                  className="preview-reading-content whitespace-pre-wrap break-words font-sans"
                   dir="auto"
                 >
                   {text}
@@ -272,9 +301,9 @@ export function DocumentPreview({
           </p>
         ) : null}
 
-        <div className="mt-4 grid grid-cols-2 gap-2">
+        <div className="preview-actions mt-4 grid grid-cols-2 gap-2.5">
           <button
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 hover:border-indigo-300 hover:text-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="preview-action preview-action--replace"
             type="button"
             disabled={isDeleting}
             onClick={() => void deleteDocument("replace")}
@@ -283,7 +312,7 @@ export function DocumentPreview({
             Replace
           </button>
           <button
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-3 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="preview-action preview-action--delete"
             type="button"
             disabled={isDeleting}
             onClick={() => void deleteDocument("delete")}
@@ -307,7 +336,7 @@ export function DocumentPreview({
           </span>
           <h3 className="mt-5 text-sm font-semibold text-slate-800">Nothing to preview yet</h3>
           <p className="mx-auto mt-2 max-w-64 text-xs leading-5 text-slate-500">
-            Upload a document to see Gemini&apos;s document overview here.
+            Upload a document to generate an overview.
           </p>
         </div>
       </div>
@@ -315,18 +344,18 @@ export function DocumentPreview({
   }
 
   return (
-    <article className="workspace-card flex flex-col">
+    <article className="workspace-card workspace-card--primary flex flex-col">
       <header className="card-heading">
         <span className="icon-tile">
           <AlignLeft aria-hidden="true" size={18} />
         </span>
         <div>
-          <h2 className="text-sm font-semibold text-slate-900">AI document preview</h2>
-          <p className="mt-0.5 text-xs text-slate-500">Generated after Gemini indexing</p>
+          <h2 className="text-sm font-semibold text-slate-900">Document overview</h2>
+          <p className="mt-0.5 text-xs text-slate-500">Key content at a glance</p>
         </div>
         {previewState.status === "error" && documentId ? (
           <button
-            className="ml-auto grid size-9 place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-indigo-600"
+            className="preview-retry-button ml-auto grid place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-indigo-600"
             type="button"
             aria-label="Retry loading document"
             onClick={() => {

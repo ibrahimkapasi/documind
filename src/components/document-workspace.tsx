@@ -35,7 +35,7 @@ export function DocumentWorkspace() {
   return (
     <section
       aria-label="Document workspace"
-      className="mt-10 grid gap-5 lg:mt-14 lg:grid-cols-[0.8fr_1.2fr_1fr]"
+      className="workspace-grid"
     >
       <DocumentUpload
         documents={documents}
